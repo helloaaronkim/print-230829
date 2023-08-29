@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd   http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd  http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+  <munit:config name="main-test-suite.xml"/>
+  <munit:test name="check-in-by-pnr-happy-path-test" description="Test check-in-by-pnr happy path">
+    <munit:behavior>
+      <flow-ref name="setup-happy-sapi-mocks" doc:name="setup-happy-sapi-mocks"/>
+      <flow-ref name="spy-all-mocks" doc:name="spy-all-mocks"/>
+    </munit:behavior>
+    <munit:execution>
+      <flow-ref name="set-check-in-event" doc:name="set-check-in-event"/>
+      <flow-ref name="check-in-by-pnr" doc:name="check-in-by-pnr"/>
+    </munit:execution>
+    <munit:validation>
+      <flow-ref name="verify-all-mocks-are-called-once" doc:name="verify-all-mocks-are-called-once"/>
+      <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::equalTo(TestData::checkInByPNRResp)]" doc:name="Payload has result"/>
+    </munit:validation>
+  </munit:test>
+  <munit:test name="check-in-by-pnr-exception-path-test" expectedErrorType="APP:CANT_CREATE_PAYMENT" description="Test check-in-by-pnr exception path">
+    <munit:behavior>
+      <flow-ref name="setup-happy-sapi-mocks" doc:name="setup-happy-sapi-mocks"/>
+      <munit-tools:mock-when processor="flow-ref" doc:name="create-payment-for-bags">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute attributeName="name" whereValue="create-payment-for-bags"/>
+        </munit-tools:with-attributes>
+        <munit-tools:then-return>
+          <munit-tools:error typeId="APP:CANT_CREATE_PAYMENT"/>
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+    </munit:behavior>
+    <munit:execution>
+      <flow-ref name="set-check-in-event" doc:name="set-check-in-event"/>
+      <flow-ref name="check-in-by-pnr" doc:name="check-in-by-pnr"/>
+    </munit:execution>
+  </munit:test>
+  <munit:test name="payment-approval-by-pnr-happy-path-test">
+    <munit:behavior>
+      <flow-ref name="setup-payment-approval-happy-sapi-mocks" doc:name="setup-payment-approval-happy-sapi-mocks"/>
+      <flow-ref name="spy-all-payment-approval-mocks" doc:name="spy-all-payment-approval-mocks"/>
+    </munit:behavior>
+    <munit:execution>
+      <flow-ref name="set-payment-approval-event" doc:name="set-payment-approval-event"/>
+      <flow-ref doc:name="payment-approval-by-pnr" name="payment-approval-by-pnr"/>
+    </munit:execution>
+    <munit:validation>
+      <flow-ref name="verify-all-payment-approval-mocks-are-called-once" doc:name="verify-all-payment-approval-mocks-are-called-once"/>
+      <munit-tools:assert doc:name="Assert payload" message="The payload does not match">
+        <munit-tools:that><![CDATA[#[%dw 2.0
+import * from dw::test::Asserts
+---
+payload must equalTo(TestData::paymentApprovalResp)]]]></munit-tools:that>
+      </munit-tools:assert>
+    </munit:validation>
+  </munit:test>
+  <sub-flow name="setup-happy-sapi-mocks">
+    <munit-tools:mock-when processor="flow-ref" doc:name="check-in-flights-management">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="check-in-flights-management"/>
+      </munit-tools:with-attributes>
+      <munit-tools:then-return>
+        <munit-tools:payload value="#[output application/json --- {}]"/>
+      </munit-tools:then-return>
+    </munit-tools:mock-when>
+    <munit-tools:mock-when processor="flow-ref" doc:name="register-passenger-data">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="register-passenger-data"/>
+      </munit-tools:with-attributes>
+      <munit-tools:then-return>
+        <munit-tools:payload value="#[output application/json --- {}]"/>
+      </munit-tools:then-return>
+    </munit-tools:mock-when>
+    <munit-tools:mock-when processor="flow-ref" doc:name="create-payment-for-bags">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="create-payment-for-bags"/>
+      </munit-tools:with-attributes>
+      <munit-tools:then-return>
+        <munit-tools:payload value="#[output application/json --- {}]"/>
+      </munit-tools:then-return>
+    </munit-tools:mock-when>
+  </sub-flow>
+  <sub-flow name="setup-payment-approval-happy-sapi-mocks">
+    <munit-tools:mock-when processor="flow-ref" doc:name="update-approvals">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="update-approvals"/>
+      </munit-tools:with-attributes>
+      <munit-tools:then-return>
+        <munit-tools:payload value="#[output application/json --- TestData::updateApprovalResp]" mediaType="application/json" encoding="UTF-8"/>
+      </munit-tools:then-return>
+    </munit-tools:mock-when>
+  </sub-flow>
+  <sub-flow name="spy-all-mocks">
+    <munit-tools:spy processor="flow-ref" doc:name="check-in-flights-management">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="check-in-flights-management"/>
+      </munit-tools:with-attributes>
+      <munit-tools:before-call>
+        <munit-tools:assert-that expression="#[vars.PNR]" is="#[MunitTools::equalTo(TestData::pnr)]" doc:name="Correct PNR var"/>
+        <munit-tools:assert-that expression="#[vars.checkIn]" is="#[MunitTools::equalTo(TestData::checkIn)]" doc:name="Correct checkIn var"/>
+      </munit-tools:before-call>
+    </munit-tools:spy>
+    <munit-tools:spy processor="flow-ref" doc:name="register-passenger-data">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="register-passenger-data"/>
+      </munit-tools:with-attributes>
+      <munit-tools:before-call>
+        <munit-tools:assert-that expression="#[vars.PNR]" is="#[MunitTools::equalTo(TestData::pnr)]" doc:name="Correct PNR var"/>
+        <munit-tools:assert-that expression="#[vars.checkIn]" is="#[MunitTools::equalTo(TestData::checkIn)]" doc:name="Correct checkIn var"/>
+      </munit-tools:before-call>
+    </munit-tools:spy>
+    <munit-tools:spy processor="flow-ref" doc:name="create-payment-for-bags">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="create-payment-for-bags"/>
+      </munit-tools:with-attributes>
+      <munit-tools:before-call>
+        <munit-tools:assert-that expression="#[vars.checkIn]" is="#[MunitTools::equalTo(TestData::checkIn)]" doc:name="Correct checkIn var"/>
+      </munit-tools:before-call>
+    </munit-tools:spy>
+  </sub-flow>
+  <sub-flow name="spy-all-payment-approval-mocks">
+    <munit-tools:spy processor="flow-ref" doc:name="update-approvals">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="update-approvals"/>
+      </munit-tools:with-attributes>
+      <munit-tools:before-call>
+        <munit-tools:assert-that expression="#[vars.PNR]" is="#[MunitTools::equalTo(TestData::pnr)]" doc:name="Correct PNR var"/>
+      </munit-tools:before-call>
+    </munit-tools:spy>
+  </sub-flow>
+  <sub-flow name="set-check-in-event">
+    <munit:set-event doc:name="Set PNR and payload">
+      <munit:payload value="#[output application/json --- TestData::checkIn]"/>
+      <munit:variables>
+        <munit:variable key="PNR" value="#[TestData::pnr]"/>
+      </munit:variables>
+    </munit:set-event>
+  </sub-flow>
+  <sub-flow name="set-payment-approval-event">
+    <munit:set-event doc:name="Set PNR and payload">
+      <munit:payload value="#[output application/json --- TestData::paymentApproval]" encoding="UTF-8" mediaType="application/json"/>
+      <munit:variables>
+        <munit:variable key="PNR" value="#[TestData::pnr]" encoding="UTF-8" mediaType="application/java"/>
+      </munit:variables>
+    </munit:set-event>
+  </sub-flow>
+  <sub-flow name="verify-all-mocks-are-called-once">
+    <munit-tools:verify-call times="1" processor="flow-ref" doc:name="check-in-flights-management flow called once">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="check-in-flights-management"/>
+      </munit-tools:with-attributes>
+    </munit-tools:verify-call>
+    <munit-tools:verify-call times="1" processor="flow-ref" doc:name="register-passenger-data flow called once">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="register-passenger-data"/>
+      </munit-tools:with-attributes>
+    </munit-tools:verify-call>
+    <munit-tools:verify-call times="1" processor="flow-ref" doc:name="create-payment-for-bags flow called once">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="create-payment-for-bags"/>
+      </munit-tools:with-attributes>
+    </munit-tools:verify-call>
+  </sub-flow>
+  <sub-flow name="verify-all-payment-approval-mocks-are-called-once">
+    <munit-tools:verify-call times="1" processor="flow-ref" doc:name="update-approvals flow called once">
+      <munit-tools:with-attributes>
+        <munit-tools:with-attribute attributeName="name" whereValue="update-approvals"/>
+      </munit-tools:with-attributes>
+    </munit-tools:verify-call>
+  </sub-flow>
+</mule>

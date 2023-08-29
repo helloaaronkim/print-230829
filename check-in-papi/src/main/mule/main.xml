@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- #%L MuleSoft Training - Anypoint Platform Development: Level 2 %% Copyright 
+	(C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com 
+	%% The software in this package is published under the terms of the Creative 
+	Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public 
+	License, a copy of which has been included with this distribution in the 
+	LICENSE.txt file. #L% -->
+<mule
+	xmlns:pay-pal-sapi="http://www.mulesoft.org/schema/mule/pay-pal-sapi"
+	xmlns:passenger-data-sapi="http://www.mulesoft.org/schema/mule/passenger-data-sapi"
+	xmlns:flights-management-sapi="http://www.mulesoft.org/schema/mule/flights-management-sapi"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:tracing="http://www.mulesoft.org/schema/mule/tracing"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd   http://www.mulesoft.org/schema/mule/tracing http://www.mulesoft.org/schema/mule/tracing/current/mule-tracing.xsd
+http://www.mulesoft.org/schema/mule/flights-management-sapi http://www.mulesoft.org/schema/mule/flights-management-sapi/current/mule-flights-management-sapi.xsd
+http://www.mulesoft.org/schema/mule/passenger-data-sapi http://www.mulesoft.org/schema/mule/passenger-data-sapi/current/mule-passenger-data-sapi.xsd
+http://www.mulesoft.org/schema/mule/pay-pal-sapi http://www.mulesoft.org/schema/mule/pay-pal-sapi/current/mule-pay-pal-sapi.xsd">
+	<flow name="check-in-by-pnr">
+		<tracing:set-logging-variable
+			variableName="PNR" value="#[vars.PNR default '']"
+			doc:name="Set PNR tracing var" />
+		<logger level="INFO"
+			message="#['Checking-in by PNR: ' ++ (vars.PNR default '')]"
+			doc:name="START" />
+		<set-variable variableName="checkIn" value="#[payload]"
+			doc:name="checkIn" />
+		<flow-ref doc:name='validate-ticket-passport-matches'
+			doc:id="ec63b086-641b-46df-9d7e-b20fc1511606"
+			name="validate-ticket-passport-matches" />
+		<flow-ref name="check-in-flights-management"
+			doc:name="check-in-flights-management" />
+		<flow-ref name="register-passenger-data"
+			doc:name="register-passenger-data" />
+		<flow-ref name="create-payment-for-bags"
+			doc:name="create-payment-for-bags" />
+    <ee:transform doc:name="paymentID: paypalReturn.paymentID">
+      <ee:message>
+        <ee:set-payload><![CDATA[%dw 2.0
+				        output application/json
+				        var paypalReturn = payload
+				        ---
+				        {
+				            paymentID: paypalReturn.paymentID
+				        }]]></ee:set-payload>
+      </ee:message>
+    </ee:transform>
+		<logger level="INFO" message="Checked-in by PNR" doc:name="END" />
+	</flow>
+
+	<flow name="validate-ticket-passport-matches" doc:id="7680dfee-d623-4802-899e-b4ea2b1374e6">
+		<flow-ref name="get-ticket-by-pnr"
+			doc:name="get-ticket-by-pnr" />
+		<choice doc:name="Ticket holder name check">
+			<when
+				expression="#[not vars.ticket.ticketHolderLastName == vars.checkIn.lastName]">
+				<raise-error type="APP:LASTNAME_MISMATCH" />
+			</when>
+		</choice>
+		<flow-ref name="get-passenger-data-by-passport"
+			doc:name="get-passenger-data-by-passport" />
+		<choice doc:name="Passenger name check">
+			<when
+				expression="#[not vars.passenger.lastName == vars.checkIn.lastName]">
+				<raise-error type="APP:LASTNAME_MISMATCH" />
+			</when>
+		</choice>
+	</flow>
+	<flow name="get-ticket-by-pnr">
+		<flights-management-sapi:get-ticket-by-pnr
+			pnr="#[vars.PNR]" target="ticket"
+			config-ref="flightsManagementSapiConfig" />
+	</flow>
+	<flow name="get-passenger-data-by-passport">
+		<passenger-data-sapi:get-passengers
+			passport-no="#[vars.ticket.ticketHolderPassPortNo]"
+			target="passenger" config-ref="passengerDataSapiConfig" />
+	</flow>
+
+	<flow name="check-in-flights-management">
+		<ee:transform doc:name="Transform Message"
+			doc:id="6fbb9270-ea4b-42b2-97ff-5334342377d1">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	lastName: vars.checkIn.lastName,
+	numBags: vars.checkIn.numbBags
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flights-management-sapi:get-ticket-by-pnr
+			doc:name="Get ticket by pnr"
+			doc:id="6772ff99-f83e-47d6-a2cb-9edc2df5e46d"
+			config-ref="flightsManagementSapiConfig" pnr="#[vars.PNR]" />
+
+		<error-handler>
+		    <on-error-continue>
+		    <raise-error type="APP:CANT_UPDATE_CHECKINS" doc:name="APP:CANT_UPDATE_CHECKINS"/>
+		    </on-error-continue>
+		</error-handler>
+
+	</flow>
+	<flow name="register-passenger-data">
+
+<ee:transform>
+    <ee:message>
+        <ee:set-payload><![CDATA[%dw 2.0
+        output application/json
+        ---
+        {
+            "date_checkin": now() >> "UTC",
+            "destination":  vars.ticket.destination,
+            "flight_date":  vars.ticket.flightDate,
+            "flight_no":    vars.ticket.flightNo,
+            "origin":       vars.ticket.origin
+        }
+        ]]></ee:set-payload>
+    </ee:message>
+</ee:transform>
+<passenger-data-sapi:create-flight-by-lno lno="#[vars.passenger.loyaltyNo]" config-ref="passengerDataSapiConfig"  />
+<error-handler>
+    <on-error-continue>
+    <raise-error type="APP:CANT_CREATE_PASSENGER_FLIGHT"  />
+    </on-error-continue>
+</error-handler>
+
+	</flow>
+	<flow name="create-payment-for-bags">
+		<ee:transform>
+		    <ee:message>
+		        <ee:set-payload><![CDATA[%dw 2.0
+		        output application/json
+		        var numBags = vars.checkIn.numBags
+		        var bagRate = 33.3
+		        ---
+		        {
+		            description: "Check-In of $(numBags) bags at USD $(bagRate) each.",
+		            amount: bagRate*numBags
+		        }]]></ee:set-payload>
+		    </ee:message>
+		</ee:transform>
+		<pay-pal-sapi:create-payment config-ref="paypalSapiConfig"  />
+		<error-handler>
+		    <on-error-continue>
+		        <raise-error type="APP:CANT_CREATE_PAYMENT"  doc:name="APP:CANT_CREATE_PAYMENT"/>
+		    </on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="payment-approval-by-pnr">
+		<logger level="INFO"
+			message="#['Approving payment by PNR: ' ++ (vars.PNR default '')]"
+			doc:name="START" />
+		<flow-ref name="update-approvals" doc:name="update-approvals" />
+		<flow-ref name="get-boarding-pass"
+			doc:name="get-boarding-pass" />
+		<logger level="INFO" message="Approved payment by PNR"
+			doc:name="END" />
+	</flow>
+	<flow name="update-approvals">
+		<ee:transform>
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+                output application/json
+                ---
+                {
+                  status: "Payment Executed"
+                }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get-boarding-pass">
+		<ee:transform>
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+                output application/json
+                ---
+                {
+                  PNR: "928382J",
+                  airportArrive: "SFO",
+                  class: "Economy",
+                  bagsCount: 2,
+                  lastName: "Smith",
+                  seat: "16C",
+                  flightDate: "2019-02-14",
+                  flight: "ANY6584",
+                  boarding: "13:15:00",
+                  airportDepart: "ATL",
+                  gate: "4A",
+                  depart: "14:30:00"
+                }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

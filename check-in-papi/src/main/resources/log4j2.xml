@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<Configuration>
+  <Appenders>
+    <RollingFile name="File" fileName="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}${project.name}.log" filePattern="${sys:mule.home}${sys:file.separator}logs${sys:file.separator}${project.name}-%i.log">
+      <PatternLayout pattern="%-5p %d [%t] [%MDC] %c: %m%n"/>
+      <SizeBasedTriggeringPolicy size="10 MB"/>
+      <DefaultRolloverStrategy max="10"/>
+    </RollingFile>
+  </Appenders>
+  <Loggers>
+    <AsyncRoot level="INFO">
+      <AppenderRef ref="File"/>
+    </AsyncRoot>
+    <AsyncLogger name="com.mulesoft.training" level="DEBUG"/>
+    <AsyncLogger name="org.mule.service.http" level="WARN"/>
+    <AsyncLogger name="org.mule.service.http.impl.service.HttpMessageLogger" level="DEBUG"/>
+    <AsyncLogger name="org.mule.extension.http" level="WARN"/>
+    <AsyncLogger name="com.mulesoft.extension.mq" level="INFO"/>
+    <AsyncLogger name="com.mulesoft.mq" level="INFO"/>
+    <AsyncLogger name="org.mule.extensions.vm" level="INFO"/>
+    <AsyncLogger name="com.mulesoft.mule.runtime.cache" level="DEBUG"/>
+    <!-- loggers: OOTB and API Policy -->
+    <AsyncLogger name="org.mule.runtime.core.internal.processor.LoggerMessageProcessor" level="INFO"/>
+    <AsyncLogger name="org.mule.runtime.logging" level="INFO"/>
+  </Loggers>
+</Configuration>

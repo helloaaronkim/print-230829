@@ -1,0 +1,16 @@
+%dw 2.0
+
+type auto_7680dfee_d623_4802_899e_b4ea2b1374e6_Output_Variables_ticket = {
+  seat: String, 
+  ticketHolderPassPortNo: String, 
+  flightNo: String, 
+  flightDate: String, 
+  ticketHolderLastName: String, 
+  origin: String, 
+  destination: String, 
+  gate: String, 
+  depart: String, 
+  boarding: String, 
+  _?: Any
+} {"description": "Represents a Ticket for a Passenger Flight."}
+

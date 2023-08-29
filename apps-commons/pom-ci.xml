@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright (C) MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <!-- students: replace with your AP org ID -->
+    <groupId>a63e6d25-8aaf-4512-b36d-d91b90a55c4a</groupId>
+    <artifactId>solutions-parent-pom</artifactId>
+    <!-- to-use-in-pom-xml-start <version>1.0.0-SNAPSHOT</version> to-use-in-pom-xml-end -->
+    <!-- to-not-use-in-pom-xml-start -->
+    <version>1.0.14</version>
+    <!-- to-not-use-in-pom-xml-end -->
+    <!-- to-use-in-pom-xml-start <relativePath>../parent-pom/pom.xml</relativePath> to-use-in-pom-xml-end -->
+    <!-- to-not-use-in-pom-xml-start -->
+    <relativePath>../../../../../parent-pom/pom.xml</relativePath>
+    <!-- to-not-use-in-pom-xml-end -->
+  </parent>
+  <!-- students: replace with your AP org ID -->
+  <groupId>a63e6d25-8aaf-4512-b36d-d91b90a55c4a</groupId>
+  <artifactId>apps-commons</artifactId>
+  <!-- to-use-in-pom-xml-start <version>1.0.0-SNAPSHOT</version> to-use-in-pom-xml-end -->
+  <!-- to-not-use-in-pom-xml-start -->
+  <version>2.1.1-STARTER</version>
+  <!-- to-not-use-in-pom-xml-end -->
+  <packaging>mule-application</packaging>
+  <name>apps-commons</name>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.mule.tools.maven</groupId>
+        <artifactId>mule-maven-plugin</artifactId>
+        <configuration>
+          <classifier>mule-plugin</classifier>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <dependencies>
+    <dependency>
+      <groupId>org.mule.connectors</groupId>
+      <artifactId>mule-http-connector</artifactId>
+      <classifier>mule-plugin</classifier>
+      <!-- must be provided by enclosing Mule app -->
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+</project>

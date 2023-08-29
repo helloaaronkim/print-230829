@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd   http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  ">
+  <!--
+  The including Mule app MUST:
+  - include <import file="health-common.xml" doc:name="Import health-common.xml" />
+  - define <sub-flow name="check-all-dependencies-are-alive" />
+  - define <http:listener-config name="apiHttpListenerConfig" />
+  -->
+  <flow name="api-alive">
+    <http:listener config-ref="apiHttpListenerConfig" path="alive">
+      <http:response statusCode="200"/>
+      <http:error-response statusCode="500">
+        <http:body>DOWN</http:body>
+      </http:error-response>
+    </http:listener>
+    <set-payload value="UP" doc:name="UP"/>
+  </flow>
+  <flow name="api-ready">
+    <http:listener config-ref="apiHttpListenerConfig" path="ready">
+      <http:response statusCode="200"/>
+      <http:error-response statusCode="500">
+        <http:body>DOWN</http:body>
+      </http:error-response>
+    </http:listener>
+    <flow-ref name="check-all-dependencies-are-alive" doc:name="check-all-dependencies-are-alive"/>
+    <set-payload value="UP" doc:name="UP"/>
+  </flow>
+  <flow name="check-dependency-is-alive">
+    <!-- Placeholder flow for homework. Required if homework is not completed. -->
+    <logger/>
+  </flow>
+</mule>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright (C) MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <servers>
+    <server>
+      <!-- MuleSoft repository for artifacts related to Mule runtime EE -->
+      <id>releases-ee</id>
+      <!-- students: replace with credentials provided in class -->
+      <username>muletraining.nexus</username>
+      <password>eApHMgTm</password>
+    </server>
+    <server>
+      <!-- Anypoint Exchange repository of the AnyAirline Anypoint Platform organization -->
+      <id>anypoint-exchange-a63e6d25-8aaf-4512-b36d-d91b90a55c4a</id>
+      <!-- students: replace with credentials provided in class -->
+      <username>~~~Client~~~</username>
+      <password>f56e424c078b44b396d950eedc3d3f59~?~65558D879004498AAD3f3D368688BdB3</password>
+    </server>
+    <server>
+      <!-- Anypoint Exchange repository for deployments via the v3 EMMP -->
+      <id>anypoint-exchange-v3-student-deployment</id>
+      <!-- students: to read from or deploy to the Exchange Maven repo of your Anypoint Platform organization, replace with credentials for a suitable account of your org -->
+      <username>~~~Client~~~</username>
+      <password>5f6da4e0515243de830cb2f78ed78dfe~?~17Feb687E5b84022bE72E48C4D124437</password>
+    </server>
+   
+    <server>
+      <!-- default Anypoint Exchange repository: the username determines which Anypoint Platform organization this belongs to -->
+      <!-- this is dangerous because it uses a generic repo ID! -->
+      <!-- this entry is therefore not required for the final solution, just for walkthroughs -->
+      <id>anypoint-exchange-v3</id>
+      <!-- students: to read from or deploy to the Exchange Maven repo of your Anypoint Platform organization, replace with credentials for a suitable account of your org -->
+      <username>~~~Client~~~</username>
+      <password>a5b546c42e5e43e7a35f90efef4a86a4~?~B02bcE067BDc43979A76627D5acA0143</password>
+    </server>
+    <server>
+      <!-- default Anypoint Exchange repository: the username determines which Anypoint Platform organization this belongs to -->
+      <!-- this is dangerous because it uses a generic repo ID! -->
+      <!-- this entry is therefore not required for the final solution, just for walkthroughs -->
+      <id>anypoint-exchange-v3-stgx</id>
+      <!-- students: to read from or deploy to the Exchange Maven repo of your Anypoint Platform organization, replace with credentials for a suitable account of your org -->
+      <username>rcmagpie</username>
+      <password>Password45!</password>
+    </server>
+  </servers>
+</settings>
