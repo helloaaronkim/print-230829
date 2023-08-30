@@ -1,0 +1,182 @@
+#%RAML 1.0
+types:
+  PaymentCreate:
+    description: Represents a request of a Payment amount to be made.
+    type: object
+    examples:
+      value:
+        strict: false
+        value:
+          description: Check-In Baggage.
+          amount: 66.6
+    additionalProperties: true
+    properties:
+      description:
+        type: string
+        required: true
+      amount:
+        type: number
+        required: true
+  PaymentId:
+    description: Represents an instance of a Payment made.
+    type: object
+    examples:
+      value:
+        strict: false
+        value:
+          paymentID: PAY-1AKD7482FAB9STATKO
+    additionalProperties: true
+    properties:
+      paymentID:
+        type: string
+        required: true
+  PayerID:
+    description: Represents a Payer ID used for PaymentApproval.
+    type: object
+    examples:
+      value:
+        strict: false
+        value:
+          payerID: STK829AJDK9
+    additionalProperties: true
+    properties:
+      payerID:
+        type: string
+        required: true
+annotationTypes:
+  amf-serverDescription:
+    type: any
+  amf-exclusiveMinimum:
+    type: any
+  amf-binding:
+    type: any
+  amf-pattern:
+    type: any
+  amf-payloads:
+    type: any
+  amf-exclusiveMaximum:
+    type: any
+  amf-consumes:
+    type: any
+  amf-additionalProperties:
+    type: any
+  amf-or:
+    type: any
+  amf-url:
+    type: any
+  amf-externalDocs:
+    type: any
+  amf-flow:
+    type: any
+  amf-oasDeprecated:
+    type: any
+  amf-contact:
+    type: any
+  amf-multipleOf:
+    type: any
+  amf-xor:
+    type: any
+  amf-not:
+    type: any
+  amf-callbacks:
+    type: any
+  amf-produces:
+    type: any
+  amf-format:
+    type: any
+  amf-license:
+    type: any
+  amf-summary:
+    type: any
+  amf-responses:
+    type: any
+  amf-maximum:
+    type: any
+  amf-tags:
+    type: any
+  amf-dependencies:
+    type: any
+  amf-readOnly:
+    type: any
+  amf-tuple:
+    type: any
+  amf-examples:
+    type: any
+  amf-collectionFormat:
+    type: any
+  amf-termsOfService:
+    type: any
+  amf-servers:
+    type: any
+  amf-xone:
+    type: any
+  amf-defaultResponse:
+    type: any
+  amf-baseUriParameters:
+    type: any
+  amf-parameters:
+    type: any
+  amf-minimum:
+    type: any
+  amf-recursive:
+    type: any
+  amf-and:
+    type: any
+securitySchemes:
+  basic:
+    type: Basic Authentication
+    description: For API clients that authenticate via Client ID and Client Secret sent as credentials in an RFC2617 Basic Auth Authorization HTTP request header.
+title: PayPal SAPI
+baseUri: tngaa-paypal-sapi-zkvtif.rajrd4-1.usa-e1.cloudhub.io/api/v1
+description: PayPal SAPI allows you create and approve payments in the backend Payment system.
+version: v1
+protocols:
+  - HTTPS
+/payments:
+  description: Create payments.
+  post:
+    (amf-consumes):
+      - application/json
+    (amf-produces):
+      - application/json
+    body:
+      application/json: PaymentCreate
+    responses:
+      "200":
+        description: ""
+        body:
+          application/json: PaymentId
+      "400":
+        description: |
+          Error creating payment.
+        body: {}
+    securedBy:
+      - basic
+/payments/{PaymentID}/approval:
+  description: Execute payment user has approved. PayerID must be a valid ID returned from the user approval flow.
+  put:
+    (amf-consumes):
+      - application/json
+    (amf-produces):
+      - application/json
+    body:
+      application/json: PayerID
+    responses:
+      "200":
+        description: ""
+        body:
+          application/json:
+            example:
+              strict: false
+              value:
+                status: Payment executed.
+            type: any
+      "400":
+        description: Error executing payment in Paypal.
+        body: {}
+    securedBy:
+      - basic
+  uriParameters:
+    PaymentID:
+      description: ID of Payment previously approved by user.
+      type: string

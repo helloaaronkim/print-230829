@@ -1,0 +1,37 @@
+###
+# #%L
+# MuleSoft Training - Anypoint Platform Development: Level 2
+# %%
+# Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+# %%
+# The software in this package is published under the terms of the
+# Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+# a copy of which has been included with this distribution in the LICENSE.txt file.
+# #L%
+###
+# All environments are configured for deployment to CH
+encrypt:
+  key: "to-be-given-at-runtime"
+
+# Client ID and Secret for this Anypoint Platform (for all environments): to register with API Manager via autodiscovery
+anypoint.platform:
+  client_id:     "to-be-given-at-runtime"
+  client_secret: "to-be-given-at-runtime"
+
+anypoint.platform.visualizer.layer: ${api.layer} # replaced through Maven resource filtering
+
+app:
+  name:    ${project.name} # replaced through Maven resource filtering
+  version: ${project.version}    # replaced through Maven resource filtering
+
+api:
+  raml:         "paypal-sapi.raml"
+  majorVersion: "v1"
+  
+https:
+  port: "8081"
+paypal:
+  aliveUrl:   "${paypal.base}/alive"
+  baseUrl:    "${paypal.base}/v1"
+  paymentUrl: "${paypal.baseUrl}/payments/payment"
+  executeUrl: "${paypal.baseUrl}/payments/payment/{paymentID}/execute"

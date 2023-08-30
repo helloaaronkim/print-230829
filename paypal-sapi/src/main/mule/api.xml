@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd   http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd  ">
+  <!--
+  curl -ik -u 'client_id:client_secret' https://localhost:8081/api/v1/payments -XPOST -H 'Content-Type: application/json' -d '{"amount": 12.34, "description": "something"}'
+  paymentID="PAY-1B56960729604235TKQQIYVY"
+  curl -ik -u 'client_id:client_secret' https://localhost:8081/api/v1/payments/$paymentID/approval -XPUT -H 'Content-Type: application/json' -d '{"payerID":"STJ8222K092ST"}'
+  -->
+  <flow name="api-main">
+    <http:listener config-ref="apiHttpListenerConfig" path="/api/${api.majorVersion}/*">
+      <http:response statusCode="#[vars.httpStatus default 200]">
+        <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+      </http:response>
+      <http:error-response statusCode="#[vars.httpStatus default 500]">
+        <http:body><![CDATA[#[output application/json --- payload]]]></http:body>
+        <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+      </http:error-response>
+    </http:listener>
+    <apikit:router config-ref="apiConfig"/>
+    <error-handler ref="api-error-handler"/>
+  </flow>
+  <flow name="api-console">
+    <http:listener config-ref="apiHttpListenerConfig" path="/console/${api.majorVersion}/*">
+      <http:response statusCode="#[vars.httpStatus default 200]">
+        <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+      </http:response>
+      <http:error-response statusCode="#[vars.httpStatus default 500]">
+        <http:body>#[payload]</http:body>
+        <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+      </http:error-response>
+    </http:listener>
+    <apikit:console config-ref="apiConfig"/>
+    <error-handler ref="api-console-error-handler"/>
+  </flow>
+  <flow name="post:\payments:application\json:apiConfig">
+    <flow-ref name="create-payment" doc:name="create-payment"/>
+    <set-payload value="#[output application/json --- {paymentID: payload}]" doc:name="Success response"/>
+  </flow>
+  <flow name="put:\payments\(PaymentID)\approval:application\json:apiConfig">
+    <set-variable variableName="paymentID" value="#[attributes.uriParams.PaymentID]" doc:name="paymentID"/>
+    <flow-ref name="approve-payment" doc:name="approve-payment"/>
+    <choice doc:name="Payment executed?">
+      <when expression="#[payload]">
+        <set-payload value="#[output application/json --- {status: 'Payment executed.'}]" doc:name="Success response"/>
+      </when>
+      <otherwise>
+        <!-- response deviates from standard responses returned from api-error-handler, so must construct here: -->
+        <set-variable variableName="httpStatus" value="400" doc:name="httpStatus=400"/>
+        <set-payload value="#[output application/json --- {status: 'Payment not executed.'}]" doc:name="Failure response"/>
+      </otherwise>
+    </choice>
+  </flow>
+</mule>

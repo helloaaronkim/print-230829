@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd  http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+  <munit:config name="main-test-suite.xml"/>
+  <munit:test name="create-payment-happy-path-test" description="Test happy path of create-payment">
+    <munit:behavior>
+      <munit-tools:mock-when processor="flow-ref">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute attributeName="name" whereValue="paypal-create-payment"/>
+        </munit-tools:with-attributes>
+        <munit-tools:then-return>
+          <munit-tools:payload value="#[output application/json --- TestData::ppCreatePmtResp]"/>
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+      <munit-tools:spy processor="flow-ref">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute attributeName="name" whereValue="paypal-create-payment"/>
+        </munit-tools:with-attributes>
+        <munit-tools:before-call>
+          <munit-tools:assert-that expression="#[payload.transactions[0].amount.total]" is="#[MunitTools::equalTo(TestData::amt as String)]"/>
+          <munit-tools:assert-that expression="#[payload.transactions[0].description]" is="#[MunitTools::equalTo(TestData::desc)]"/>
+        </munit-tools:before-call>
+      </munit-tools:spy>
+    </munit:behavior>
+    <munit:execution>
+      <munit:set-event>
+        <munit:payload value="#[output application/json --- TestData::createPmtRequ]"/>
+      </munit:set-event>
+      <flow-ref name="create-payment"/>
+    </munit:execution>
+    <munit:validation>
+      <munit-tools:verify-call times="1" processor="flow-ref">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute attributeName="name" whereValue="paypal-create-payment"/>
+        </munit-tools:with-attributes>
+      </munit-tools:verify-call>
+      <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::equalTo(TestData::paymtID)]"/>
+    </munit:validation>
+  </munit:test>
+  <munit:test name="approve-payment-happy-path-test" description="Test happy path of approve-payment">
+    <munit:behavior>
+      <munit-tools:mock-when processor="flow-ref">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute attributeName="name" whereValue="paypal-execute-payment"/>
+        </munit-tools:with-attributes>
+        <munit-tools:then-return>
+          <munit-tools:payload value="#[output application/json --- TestData::ppExecPmtResp]"/>
+        </munit-tools:then-return>
+      </munit-tools:mock-when>
+      <munit-tools:spy processor="flow-ref">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute attributeName="name" whereValue="paypal-execute-payment"/>
+        </munit-tools:with-attributes>
+        <munit-tools:before-call>
+          <munit-tools:assert-that expression="#[payload.payer_id]" is="#[MunitTools::equalTo(TestData::payerID)]"/>
+          <munit-tools:assert-that expression="#[vars.paymentID]" is="#[MunitTools::equalTo(TestData::paymtID)]"/>
+        </munit-tools:before-call>
+      </munit-tools:spy>
+    </munit:behavior>
+    <munit:execution>
+      <munit:set-event>
+        <munit:payload value="#[output application/json --- TestData::approvePmtRequ]"/>
+        <munit:variables>
+          <munit:variable key="paymentID" value="#[TestData::paymtID]"/>
+        </munit:variables>
+      </munit:set-event>
+      <flow-ref name="approve-payment"/>
+    </munit:execution>
+    <munit:validation>
+      <munit-tools:verify-call times="1" processor="flow-ref">
+        <munit-tools:with-attributes>
+          <munit-tools:with-attribute attributeName="name" whereValue="paypal-execute-payment"/>
+        </munit-tools:with-attributes>
+      </munit-tools:verify-call>
+      <munit-tools:assert-that expression="#[payload]" is="#[MunitTools::equalTo(true)]"/>
+    </munit:validation>
+  </munit:test>
+</mule>

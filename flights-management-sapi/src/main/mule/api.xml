@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  #%L
+  MuleSoft Training - Anypoint Platform Development: Level 2
+  %%
+  Copyright (C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com
+  %%
+  The software in this package is published under the terms of the
+  Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License,
+  a copy of which has been included with this distribution in the LICENSE.txt file.
+  #L%
+  -->
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd   http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd   http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd    http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+  <!--
+  curl -ik https://localhost:8081/api/v1/tickets/PNR123/checkin -X PUT -H 'Content-Type: application/json' -u '...:...'  -d '{"lastName":"Smith","numBags":2}'
+  curl -ik https://localhost:8081/api/v1/tickets/PNR123 -u '...:...'
+  -->
+  <flow name="api-main">
+    <http:listener config-ref="apiHttpListenerConfig" path="/api/${api.majorVersion}/*">
+      <http:response statusCode="#[vars.httpStatus default 200]">
+        <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+      </http:response>
+      <http:error-response statusCode="#[vars.httpStatus default 500]">
+        <http:body><![CDATA[#[output application/json --- payload]]]></http:body>
+        <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+      </http:error-response>
+    </http:listener>
+    <apikit:router config-ref="apiConfig"/>
+    <error-handler ref="api-error-handler"/>
+  </flow>
+  <flow name="api-console">
+    <http:listener config-ref="apiHttpListenerConfig" path="/console/${api.majorVersion}/*">
+      <http:response statusCode="#[vars.httpStatus default 200]">
+        <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+      </http:response>
+      <http:error-response statusCode="#[vars.httpStatus default 500]">
+        <http:body>#[payload]</http:body>
+        <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+      </http:error-response>
+    </http:listener>
+    <apikit:console config-ref="apiConfig"/>
+    <error-handler ref="api-console-error-handler"/>
+  </flow>
+<!--   <flow name="put:\tickets\(PNR)\checkin:application\json:apiConfig">
+    <set-variable variableName="PNR" value="#[attributes.uriParams.PNR]" doc:name="PNR"/>
+    <flow-ref name="check-in-by-pnr" doc:name="check-in-by-pnr"/>
+  </flow> -->
+
+  <flow name="put:\tickets\(PNR)\checkin:application\json:apiConfig">
+    <set-variable variableName="PNR" value="#[attributes.uriParams.PNR]" />
+    <flow-ref name="check-in-by-pnr" doc:name="check-in-by-pnr"/>
+    <choice>
+      <when expression="#[payload]">
+        <set-payload value="#[output application/json --- {message: 'Passenger check-in successful.'}]" doc:name="Passenger check-in successful."/>
+      </when>
+      <otherwise>
+        <set-payload value="#[output application/json --- {message: 'Invalid passenger name record given.'}]" doc:name="Invalid passenger name record given."/>
+        <set-variable variableName="httpStatus" value="400" doc:name="httpStatus 400"/>
+      </otherwise>
+    </choice>
+  </flow>
+  
+  <flow name="get:\tickets\(PNR):apiConfig">
+    <set-variable variableName="PNR" value="#[attributes.uriParams.PNR]" doc:name="PNR"/>
+    <flow-ref name="get-ticket-by-pnr" doc:name="get-ticket-by-pnr"/>
+  </flow>
+</mule>

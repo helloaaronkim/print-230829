@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- #%L MuleSoft Training - Anypoint Platform Development: Level 2 %% Copyright 
+	(C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com 
+	%% The software in this package is published under the terms of the Creative 
+	Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public 
+	License, a copy of which has been included with this distribution in the 
+	LICENSE.txt file. #L% -->
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:core="http://www.mulesoft.org/schema/mule/core"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd   http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd   http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd    http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
+	<flow name="check-in-by-pnr">
+		<logger level="INFO"
+			message="#['Checking-in by PNR: ' ++ (vars.PNR default '')]"
+			doc:name="START" />
+		<!-- TODO: create checkIn SOAP payload -->
+		<logger level="INFO" message="Before calling checkIn SOAP WS"
+			doc:name="Before WS" />
+		<try>
+			<!-- TODO: call checkIn on Flights Management system SOAP service -->
+			<flow-ref doc:name="flights-wsc-check-in"
+				doc:id="d0b43352-b24a-4ff1-be69-d7b2e7590da0"
+				name="flights-wsc-check-in" />
+			<error-handler>
+				<on-error-continue>
+					<raise-error type="APP:CANT_CHECKIN"
+						doc:name="Raise APP:CANT_CHECKIN error" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<logger level="INFO"
+			message="After receiving checkIn SOAP WS response"
+			doc:name="After WS" />
+		<set-payload
+			value="#[output application/java --- payload.body.checkInResponse.return as Boolean]"
+			doc:name="Success JSON response" />
+		<logger level="INFO" message="Checked-in by PNR" doc:name="END" />
+	</flow>
+
+
+	<sub-flow name="flights-wsc-check-in"
+		doc:id="6fc356bb-91a2-48d4-a07e-a6bda62c072a">
+		<wsc:consume operation="checkIn"
+			config-ref="flightsWSCConfig">
+			<wsc:message>
+				<wsc:body><![CDATA[#[%dw 2.0 
+output application/xml
+ns ns0 http://flightsMgmt.sword.com/
+---
+{
+ns0#checkIn: {
+    pnr: vars.PNR,
+    passengerLastName: payload.lastName,
+    numOfBags: payload.numBags
+    }
+    }]]]></wsc:body>
+			</wsc:message>
+		</wsc:consume>
+	</sub-flow>
+
+
+
+
+	<flow name="get-ticket-by-pnr">
+		<logger level="INFO" message="Getting ticket by PNR"
+			doc:name="START" />
+		<!-- TODO: create getTicketByPNR SOAP payload -->
+		<logger level="INFO"
+			message="Before calling getTicketByPNR SOAP WS" doc:name="Before WS" />
+		<try>
+			<!-- TODO: call getTicketByPNR on Flights Management system SOAP service -->
+			<logger
+				doc:name="TODO: call getTicketByPNR on Flights Management system SOAP service" />
+			<ee:transform doc:name="Fake getTicketByPNR WS response">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+            output application/xml
+            ns soap http://schemas.xmlsoap.org/soap/envelope/
+            ns ns0 http://flightsMgmt.sword.com/
+            ---
+            body: {
+                ns0#getTicketByPNRResponse: {
+                    return: {
+                        ticketHolderLastName: "Mule",
+                        ticketHolderPassportNo: "P3JR0BZ2OY",
+                        origin: "SFO",
+                        destination: "LAX",
+                        flightDate: "2019-02-05",
+                        flightNo: "ANY6829",
+                        boarding: "13:15:00",
+                        class: "Economy",
+                        depart: "14:30:00",
+                        gate: "4A",
+                        seat: "16C"
+                    }
+                }
+            }]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<error-handler>
+				<on-error-continue>
+					<raise-error type="APP:CANT_GET_TICKET"
+						doc:name="Raise APP:CANT_GET_TICKET error" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<logger level="INFO"
+			message="After receiving getTicketByPNR SOAP WS response"
+			doc:name="After WS" />
+		<ee:transform doc:name="To Ticket JSON response">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+          output application/json
+          // hack to convert UTC times sent by FMS into local times in the origin TZ
+          var TZLookup = {
+            "SFO": "America/Los_Angeles",
+            "LAX": "America/Los_Angeles",
+            "ATL": "America/New_York",
+            "VIE": "Europe/Vienna"
+            // ...
+          }
+          var r = payload.body.getTicketByPNRResponse.return
+          
+          var flightDTdepart   = (r.flightDate ++ "T" ++ r.depart  ) as DateTime
+          var flightDTboarding = (r.flightDate ++ "T" ++ r.boarding) as DateTime
+          
+          var flightDTdepartLocal   = flightDTdepart   >> TZLookup[r.origin]
+          var flightDTboardingLocal = flightDTboarding >> TZLookup[r.origin]
+          
+          var dateLocal     = flightDTdepartLocal   as String {format: "YYYY-MM-dd"}
+          var departLocal   = flightDTdepartLocal   as String {format: "hh:mm:ss"}
+          var boardingLocal = flightDTboardingLocal as String {format: "hh:mm:ss"}
+          ---
+          {
+            ticketHolderLastName:   r.ticketHolderLastName,
+            ticketHolderPassPortNo: r.ticketHolderPassportNo,
+            origin:                 r.origin,
+            destination:            r.destination,
+            flightDate:             dateLocal,
+            flightNo:               r.flightNo,
+            boarding:               boardingLocal,
+            class:                  r.class,
+            depart:                 departLocal,
+            gate:                   r.gate,
+            seat:                   r.seat
+          }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" message="Got ticket by PNR" doc:name="END" />
+	</flow>
+
+	<flow name="receive-cancellation-notification">
+		<http:listener path="/api/cancelFlight"
+			allowedMethods="POST" config-ref="apiHttpListenerConfig">
+			<http:response
+				statusCode="#[vars.httpStatus default 202]">
+				<http:body>#[output text/plain --- vars.response default'OK']</http:body>
+			</http:response>
+		</http:listener>
+		<logger level="INFO"
+			message="Received Cancellation Notification" />
+		<vm:publish queueName="flight-cancel-notifs-q"
+			sendCorrelationId="ALWAYS" timeout="5000" timeoutUnit="MILLISECONDS"
+			config-ref="vmConfig" doc:name="flight-cancel-notifs-q" />
+	</flow>
+	<flow name="deliver-flight-cancelled-event">
+		<vm:listener queueName="flight-cancel-notifs-q"
+			transactionalAction="ALWAYS_BEGIN" config-ref="vmConfig"
+			doc:name="flight-cancel-notifs-q" timeout="30">
+			<redelivery-policy maxRedeliveryCount="3"
+				idExpression="#[correlationId]" />
+		</vm:listener>
+		<logger level="INFO" message="Received" />
+
+		<ee:transform>
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+          output application/json
+          ---
+          {
+            pnr: payload.CancellationNotification.PNR,
+            lastNameOfPassenger: payload.CancellationNotification.PassengerLastName
+          }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+
+		<error-handler>
+			<on-error-continue type="MULE:REDELIVERY_EXHAUSTED"
+				enableNotifications="false" logException="false">
+				<logger level="ERROR" message="Giving up"
+					doc:name="Giving up" />
+				<flow-ref name="send-to-vm-dlq" doc:name="send-to-vm-dlq" />
+			</on-error-continue>
+		</error-handler>
+
+	</flow>
+
+	<sub-flow name="send-to-vm-dlq">
+		<vm:publish queueName="flight-cancel-notifs-dlq"
+			timeout="5000" timeoutUnit="MILLISECONDS" config-ref="vmConfig"
+			doc:name="flight-cancel-notifs-dlq" />
+	</sub-flow>
+
+	<flow name="handle-dlq">
+		<vm:listener queueName="flight-cancel-notifs-dlq" config-ref="vmConfig" doc:name="flight-cancel-notifs-dlq">
+			<redelivery-policy maxRedeliveryCount="3" idExpression="#[correlationId]" />
+		</vm:listener>
+		<logger level="INFO" message="Processing message from DLQ" />
+	</flow>
+
+	<flow name="register-callback">
+		<scheduler>
+			<scheduling-strategy>
+				<fixed-frequency frequency="365000" timeUnit="DAYS" />
+			</scheduling-strategy>
+		</scheduler>
+		<ee:transform>
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+        output application/xml
+        ns ns0 http://flightsMgmt.sword.com/
+        ---
+        {
+        ns0#registerForCancellationNotifications: {
+            callbackURL: p("api.callback.url")
+        }
+        }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<try>
+			<flow-ref name="register-for-cancellation-notifications"
+				doc:name="register-for-cancellation-notifications" />
+			<error-handler>
+				<on-error-continue>
+					<raise-error type="APP:CANT_REGISTER_CALLBACK"
+						doc:name="APP:CANT_REGISTER_CALLBACK" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+	</flow>
+	<sub-flow name="register-for-cancellation-notifications">
+		<wsc:consume
+			operation="registerForCancellationNotifications"
+			config-ref="flightsWSCConfig" />
+	</sub-flow>
+
+</mule>

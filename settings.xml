@@ -27,7 +27,7 @@
       <id>anypoint-exchange-v3-student-deployment</id>
       <!-- students: to read from or deploy to the Exchange Maven repo of your Anypoint Platform organization, replace with credentials for a suitable account of your org -->
       <username>~~~Client~~~</username>
-      <password>5f6da4e0515243de830cb2f78ed78dfe~?~17Feb687E5b84022bE72E48C4D124437</password>
+      <password>52d57d6bf94f4cc39ff6f22d4bffac11~?~8C81Ec2B1f1E4929b19B7022AdEE5eF0</password>
     </server>
    
     <server>

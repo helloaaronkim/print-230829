@@ -1,0 +1,216 @@
+#%RAML 1.0
+types:
+  Ticket:
+    description: Represents a Ticket for a Passenger Flight.
+    type: object
+    examples:
+      value:
+        strict: false
+        value:
+          ticketHolderLastName: Smith
+          ticketHolderPassPortNo: SA7482948
+          origin: LAX
+          destination: KLU
+          flightDate: 2019-02-12
+          flightNo: ANY2894
+          boarding: 13:15:00
+          class: Economy
+          depart: 14:30:00
+          gate: 4A
+          seat: 16C
+    additionalProperties: true
+    properties:
+      ticketHolderLastName:
+        type: string
+        required: true
+      ticketHolderPassPortNo:
+        type: string
+        required: true
+      origin:
+        type: string
+        required: true
+      destination:
+        type: string
+        required: true
+      flightDate:
+        type: date-only
+        required: true
+      flightNo:
+        type: string
+        required: true
+      boarding:
+        description: Boarding time as local time based on flight origin
+        type: string
+        required: true
+      depart:
+        description: Departure time as local time based on flight origin
+        type: string
+        required: true
+      gate:
+        type: string
+        required: true
+      seat:
+        type: string
+        required: true
+  Checkin:
+    description: Represents a check-in request for a given passenger.
+    type: object
+    examples:
+      value:
+        strict: false
+        value:
+          lastName: Smith
+          numBags: 2
+    additionalProperties: true
+    properties:
+      lastName:
+        type: string
+        required: true
+      numBags:
+        type: integer
+        required: true
+annotationTypes:
+  amf-serverDescription:
+    type: any
+  amf-exclusiveMinimum:
+    type: any
+  amf-binding:
+    type: any
+  amf-pattern:
+    type: any
+  amf-payloads:
+    type: any
+  amf-exclusiveMaximum:
+    type: any
+  amf-consumes:
+    type: any
+  amf-additionalProperties:
+    type: any
+  amf-or:
+    type: any
+  amf-url:
+    type: any
+  amf-externalDocs:
+    type: any
+  amf-flow:
+    type: any
+  amf-oasDeprecated:
+    type: any
+  amf-contact:
+    type: any
+  amf-multipleOf:
+    type: any
+  amf-xor:
+    type: any
+  amf-not:
+    type: any
+  amf-callbacks:
+    type: any
+  amf-produces:
+    type: any
+  amf-format:
+    type: any
+  amf-license:
+    type: any
+  amf-summary:
+    type: any
+  amf-responses:
+    type: any
+  amf-maximum:
+    type: any
+  amf-tags:
+    type: any
+  amf-dependencies:
+    type: any
+  amf-readOnly:
+    type: any
+  amf-tuple:
+    type: any
+  amf-examples:
+    type: any
+  amf-collectionFormat:
+    type: any
+  amf-termsOfService:
+    type: any
+  amf-servers:
+    type: any
+  amf-xone:
+    type: any
+  amf-defaultResponse:
+    type: any
+  amf-baseUriParameters:
+    type: any
+  amf-parameters:
+    type: any
+  amf-minimum:
+    type: any
+  amf-recursive:
+    type: any
+  amf-and:
+    type: any
+securitySchemes:
+  basic:
+    type: Basic Authentication
+    description: For API clients that authenticate via Client ID and Client Secret sent as credentials in an RFC2617 Basic Auth Authorization HTTP request header.
+title: Flights Management SAPI
+baseUri: tngaa-flights-management-sapi-zkvtif.rajrd4-1.usa-e1.cloudhub.io/api/v1
+description: Flights Management SAPI allows you to retrieve Ticket and Flight information and check-in passengers to a Flight using their the loyalty number (LNO).
+version: v1
+protocols:
+  - HTTPS
+/tickets/{PNR}:
+  get:
+    description: Validate and get Flight data
+    (amf-produces):
+      - application/json
+    responses:
+      "200":
+        description: ""
+        body:
+          application/json: Ticket
+      "400":
+        description: ""
+        body:
+          application/json:
+            example:
+              strict: false
+              value:
+                message: Invalid passenger name record given.
+            type: any
+    securedBy:
+      - basic
+  uriParameters:
+    PNR:
+      type: string
+/tickets/{PNR}/checkin:
+  put:
+    (amf-consumes):
+      - application/json
+    (amf-produces):
+      - application/json
+    body:
+      application/json: Checkin
+    responses:
+      "200":
+        description: ""
+        body:
+          application/json:
+            example:
+              strict: false
+              value:
+                message: Passenger check-in successful.
+            type: any
+      "400":
+        description: ""
+        body:
+          application/json:
+            example:
+              strict: false
+              value:
+                message: Invalid passenger name record given.
+            type: any
+    securedBy:
+      - basic
+  uriParameters:
+    PNR:
+      type: string
