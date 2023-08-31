@@ -16,8 +16,9 @@
 
 
 * Memo
-  * access token : l2k28ss.sid3fjfd5_Zsrq9cK9hNsqrSTfu8ji334EEVW83hjskShnodE
-  * curl -i -X POST -H "Content-Type: application/json" -H "Authorization: Bearer l2k28ss.sid3fjfd5_Zsrq9cK9hNsqrSTfu8ji334EEVW83hjskShnodE" -d "{ \"intent\":\"sale\", \"payer\": {\"payment_method\":\"paypal\" }, \"transactions\":[ { \"amount\":{\"total\":\"80.00\", \"currency\":\"USD\" }, \"description\": \"Check-In Baggage.\", \"custom\": \"ANYAIRLINE_90048630024435\",\"invoice_number\": \"48787589673\", \"payment_options\":{\"allowed_payment_method\":\"INSTANT_FUNDING_SOURCE\" },\"soft_descriptor\":\"ANYAIRLINE BAGGAGE\" } ], \"note_to_payer\":\"Behappy.\" }" https://training-paypal-fake-api-sandbox-mjf1rw.5sc6y6-1.usa-e2.cloudhub.io/v1/payments/payment
+curl -ik -H "Content-Type:text/xml" -d "<CancellationNotification><PNR>PNR-test</PNR><PassengerLastName>Aaron</PassengerLastName></CancellationNotification>" https://localhost:8081/api/cancelFlight
+
+curl -ik -H "Content-Type:text/xml" -d "<CancellationNotification><PNR>mulesoft-pnr</PNR><PassengerLastName>Edward</PassengerLastName></CancellationNotification>" https://flights-management-sapi-dev-g1b2d9.5sc6y6-3.usa-e2.cloudhub.io/api/cancelFlight
 
 * (Sample) Custom connector with insecure certificate
 ```

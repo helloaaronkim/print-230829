@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- #%L MuleSoft Training - Anypoint Platform Development: Level 2 %% Copyright 
+	(C) 2019 - 2021 MuleSoft, Inc. All rights reserved. http://www.mulesoft.com 
+	%% The software in this package is published under the terms of the Creative 
+	Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public 
+	License, a copy of which has been included with this distribution in the 
+	LICENSE.txt file. #L% -->
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:core="http://www.mulesoft.org/schema/mule/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd   http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd    http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd  http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd  http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+	<!-- ... -->
+	<global-property name="encrypt.key" value="secure12345" />
+	<global-property name="env" value="dev"
+		doc:name="Default env to dev" />
+	<!-- 1st def of a property is preserved, so env-dependent takes priority 
+		over env-independent -->
+	<configuration-properties
+		file="${env}-properties.yaml" doc:name="Env Config Props" />
+	<secure-properties:config
+		file="${env}-secure-properties.yaml" key="${encrypt.key}"
+		name="secureEnvPropsConfig" doc:name="Secure Env Config Props">
+		<secure-properties:encrypt
+			algorithm="Blowfish" />
+	</secure-properties:config>
+	<configuration-properties
+		file="properties.yaml" doc:name="Config Props" />
+	<http:listener-config name="apiHttpListenerConfig">
+		<http:listener-connection host="0.0.0.0"
+			protocol="HTTP" port="${http.port}" />
+	</http:listener-config>
+	<anypoint-mq:config name="amqConfig">
+		<anypoint-mq:connection
+			clientId="29a2dfd4f16449cc996626b6e2109c42"
+			clientSecret="63dE3DC0904943Ffbc16d3A74ce0B635"
+			url="https://mq-ap-northeast-1.anypoint.mulesoft.com/api/v1" />
+	</anypoint-mq:config>
+	<vm:config name="mobileAppNetworkVMConfig">
+		<vm:queues>
+			<vm:queue queueName="mobile-app-native-notifs-q"/>
+		</vm:queues>
+	</vm:config>
+	<anypoint-mq:circuit-breaker name="vmConnectCircuitBreaker" onErrorTypes="VM:CONNECTIVITY, VM:QUEUE_TIMEOUT"
+		errorsThreshold="1" tripTimeout="60" tripTimeoutUnit="SECONDS" />
+</mule>

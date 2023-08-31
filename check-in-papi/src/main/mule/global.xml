@@ -63,7 +63,7 @@ http://www.mulesoft.org/schema/mule/pay-pal-sapi http://www.mulesoft.org/schema/
 		property_password="A1c099D51C50420b84641D71b229EBac" property_responseTimeout="3000"/>
 
 	<pay-pal-sapi:config name="paypalSapiConfig"
-		property_host="tngaa-paypal-sapi-dev-9yj2rh.rajrd4-2.usa-e1.cloudhub.io"
+		property_host="tngaa-paypal-sapi-dev-9yj2rh.rajrd4-2.usa-e1.cloudhub.iotest"
 		property_username="e66105d66e8b4520b091127620221cce"
 		property_password="A1c099D51C50420b84641D71b229EBac" property_responseTimeout="3000"/>
 	<global-property doc:name="Global Property" doc:id="5cc2f1af-59df-4573-9fbe-f94552e76b4b" name="encrypt.key" value="secure12345" />

@@ -1,0 +1,27 @@
+{
+	"definitions": {},
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "http://training.mulesoft.com/FlightCancelledEvent.schema.json",
+	"type": "object",
+	"title": "FlightCancelledEvent",
+	"properties": {
+		"pnr": {
+			"$id": "#/properties/pnr",
+			"type": "string",
+			"examples": [
+				"PNR123"
+			]
+		},
+		"lastNameOfPassenger": {
+			"$id": "#/properties/lastNameOfPassenger",
+			"type": "string",
+			"examples": [
+				"Mule"
+			]
+		}
+	},
+	"required": [
+		"pnr",
+		"lastNameOfPassenger"
+	]
+}

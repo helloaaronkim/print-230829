@@ -5,7 +5,12 @@
 	Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public 
 	License, a copy of which has been included with this distribution in the 
 	LICENSE.txt file. #L% -->
-<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+<mule
+	xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:xml-module="http://www.mulesoft.org/schema/mule/xml-module"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
 	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
 	xmlns="http://www.mulesoft.org/schema/mule/core"
 	xmlns:core="http://www.mulesoft.org/schema/mule/core"
@@ -15,11 +20,13 @@
 	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd 
 http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd   http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd   http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd  http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd  http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd    http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
-http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/xml-module http://www.mulesoft.org/schema/mule/xml-module/current/mule-xml-module.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd">
 	<flow name="check-in-by-pnr">
 		<logger level="INFO"
 			message="#['Checking-in by PNR: ' ++ (vars.PNR default '')]"
@@ -168,41 +175,81 @@ ns0#checkIn: {
 				<http:body>#[output text/plain --- vars.response default'OK']</http:body>
 			</http:response>
 		</http:listener>
+		<set-variable variableName='originalPayload'
+			value="#[output text/plain --- payload.^raw]"
+			doc:name="originalPayload = payload.^raw" />
+
 		<logger level="INFO"
 			message="Received Cancellation Notification" />
+
+		<validation:is-true
+			expression="#[var ct = attributes.headers.'content-type' --- ((not isBlank(ct)) and (lower(ct) contains '/xml'))]"
+			doc:name="content-type" />
+
+		<xml-module:validate-schema doc:name="Validate schema" doc:id="cbbc2d68-0714-477d-a98c-a00dc9b5d76c" schemas="schemas/CancellationNotification.xsd"/>
 		<vm:publish queueName="flight-cancel-notifs-q"
 			sendCorrelationId="ALWAYS" timeout="5000" timeoutUnit="MILLISECONDS"
 			config-ref="vmConfig" doc:name="flight-cancel-notifs-q" />
+
+		<error-handler>
+			<on-error-continue
+				when="#[['VALIDATION', 'XML-MODULE'] contains error.errorType.namespace]" enableNotifications="true" logException="true">
+				<set-variable variableName="httpStatus" value="400"
+					doc:name="httpStatus = 400" />
+				<set-variable variableName="response"
+					value="#[output text/plain --- vars.originalPayload]"
+					doc:name="response = vars.originalPayload" />
+			</on-error-continue>
+		</error-handler>
+
 	</flow>
 	<flow name="deliver-flight-cancelled-event">
 		<vm:listener queueName="flight-cancel-notifs-q"
 			transactionalAction="ALWAYS_BEGIN" config-ref="vmConfig"
-			doc:name="flight-cancel-notifs-q" timeout="30">
+			doc:name="flight-cancel-notifs-q">
 			<redelivery-policy maxRedeliveryCount="3"
 				idExpression="#[correlationId]" />
 		</vm:listener>
-		<logger level="INFO" message="Received" />
-
-		<ee:transform>
-			<ee:message>
-				<ee:set-payload><![CDATA[%dw 2.0
-          output application/json
-          ---
-          {
-            pnr: payload.CancellationNotification.PNR,
-            lastNameOfPassenger: payload.CancellationNotification.PassengerLastName
-          }]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-
-		<error-handler>
-			<on-error-continue type="MULE:REDELIVERY_EXHAUSTED"
-				enableNotifications="false" logException="false">
-				<logger level="ERROR" message="Giving up"
-					doc:name="Giving up" />
-				<flow-ref name="send-to-vm-dlq" doc:name="send-to-vm-dlq" />
-			</on-error-continue>
-		</error-handler>
+		<logger level="INFO" message="Received" doc:name="Received" />
+		<try transactionalAction="BEGIN_OR_JOIN">
+			<ee:transform>
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+	          output application/json
+	          ---
+	          {
+	            pnr: payload.CancellationNotification.PNR,
+	            lastNameOfPassenger: payload.CancellationNotification.PassengerLastName
+	          }]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<json:validate-schema doc:name="Validate schema" doc:id="151af7ed-3051-4a86-9459-5d4671503ee8" schema="schemas/FlightCancelledEvent.schema.json"/>
+			<set-variable variableName="msgValid" value="#[true]"
+				doc:name="msgValid = true" />
+			<error-handler>
+				<on-error-continue enableNotifications="false"
+					logException="false">
+					<flow-ref name="send-to-vm-dlq" doc:name="send-to-vm-dlq" />
+					<set-variable variableName="msgValid" value="#[false]"
+						doc:name="msgValid = false" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<choice>
+			<when expression="#[vars.msgValid]">
+				<anypoint-mq:publish
+					destination="cancelled-flights-exchg-dev"
+					config-ref="amqConfig"
+					doc:name="cancelled-flights-exchg-dev" >
+					<anypoint-mq:properties ><![CDATA[#[output application/java
+---
+{
+	"correlationId" : correlationId,
+	"message" : "みなさんお疲れ様でしたー"
+}]]]></anypoint-mq:properties>
+				</anypoint-mq:publish>
+			</when>
+		</choice>
 
 	</flow>
 
@@ -213,8 +260,10 @@ ns0#checkIn: {
 	</sub-flow>
 
 	<flow name="handle-dlq">
-		<vm:listener queueName="flight-cancel-notifs-dlq" config-ref="vmConfig" doc:name="flight-cancel-notifs-dlq">
-			<redelivery-policy maxRedeliveryCount="3" idExpression="#[correlationId]" />
+		<vm:listener queueName="flight-cancel-notifs-dlq"
+			config-ref="vmConfig" doc:name="flight-cancel-notifs-dlq">
+			<redelivery-policy maxRedeliveryCount="3"
+				idExpression="#[correlationId]" />
 		</vm:listener>
 		<logger level="INFO" message="Processing message from DLQ" />
 	</flow>
